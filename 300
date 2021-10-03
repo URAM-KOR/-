@@ -1,0 +1,4 @@
+Collecting pywin32
+  Using cached pywin32-301-cp38-cp38-win_amd64.whl (9.3 MB)
+Installing collected packages: pywin32
+Successfully installed pywin32-301
