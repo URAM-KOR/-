@@ -8,8 +8,6 @@ import ccxt
 import ftx
 
 
-
-
 while True:
     # BALANCE
     c = ccxt.ftx({
@@ -36,40 +34,46 @@ while True:
     historical = historical.loc[:, ['open', 'close', 'high', 'low']]
 
     X = 0.5
-    T1 = historical.iloc[-1]['open'] + (historical.iloc[-1]['high'] - historical.iloc[-1]['low']) * X
 
     print(historical.tail(3))
     print('잔액 =', balance, 'USD')
     print('미체결:', BTC)
     print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    print('목표가 =', T1)
     # print(float(datetime.datetime.now().strftime('%M'))%15)
 
     try:
         btc_data = requests.get('https://ftx.com/api/markets/BTC-PERP').json()
         print('현재가 =', btc_data['result']['ask'])
-        print(balance / btc_data['result']['ask'])
+        print(f"레버리지 ={BTC/(balance / btc_data['result']['ask']):.2f} 배")
 
     except Exception as e:
         print(f'Error obtaining BTC old data: {e}')
 
     if BTC != 0:
         if float(datetime.datetime.now().strftime('%M'))%15==0:
+            T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('목표가 =', T1)
             s = c.place_order("BTC-PERP", "sell", 1,  0.0001, reduce_only=True, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             print(s)
             sleep(2)
-    else:
-        if btc_data['result']['ask'] < T1:
-            print('The trade requirement was not satisfied.')
-            sleep(2)
-            continue
+        else:
+            T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('목표가 =', T1)
+    elif btc_data['result']['ask'] < T1:
+        T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+        print('목표가 =', T1)
+        print('The trade requirement was not satisfied.')
+        sleep(2)
+        continue
 
-        elif btc_data['result']['ask'] >= T1:
-            try:
-                r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001,client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                print(r)
-            except Exception as e:
-                print(f'Error making order request: {e}')
-            sleep(2)
+    elif btc_data['result']['ask'] >= T1:
+        try:
+            T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('목표가 =', T1)
+            r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001,client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print(r)
+        except Exception as e:
+            print(f'Error making order request: {e}')
+        sleep(2)
 
 
