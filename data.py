@@ -33,4 +33,4 @@ for i in range(numData):
 
 stockdata = pd.DataFrame(data= data, columns=datacolumn)
 print(stockdata)
-stockdata.to_csv('stockitems.csv', index=False)
+stockdata.to_csv('stockdata.csv', index=False)
