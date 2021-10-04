@@ -40,28 +40,37 @@ while True:
     print('미체결:', BTC)
     print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     # print(float(datetime.datetime.now().strftime('%M'))%15)
+    T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+    T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
 
     try:
         btc_data = requests.get('https://ftx.com/api/markets/BTC-PERP').json()
-        print('현재가 =', btc_data['result']['ask'])
         print(f"레버리지 ={BTC/(balance / btc_data['result']['ask']):.2f} 배")
-
+        print('현재가 =', btc_data['result']['ask'])
     except Exception as e:
         print(f'Error obtaining BTC old data: {e}')
 
     if BTC != 0:
-        if float(datetime.datetime.now().strftime('%M'))%15==0:
+        if btc_data['result']['ask'] < T2:
+        # if float(datetime.datetime.now().strftime('%M'))%15==0:
             T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-            print('목표가 =', T1)
+            print('매수기준 =', T1)
+            T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('매도기준 =', T2)
             s = c.place_order("BTC-PERP", "sell", 1,  0.0001, reduce_only=True, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             print(s)
             sleep(2)
         else:
             T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-            print('목표가 =', T1)
+            print('매수기준 =', T1)
+            T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('매도기준 =', T2)
+            print('The trade requirement was not satisfied.')
     elif btc_data['result']['ask'] < T1:
         T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-        print('목표가 =', T1)
+        print('매수기준 =', T1)
+        T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+        print('매도기준 =', T2)
         print('The trade requirement was not satisfied.')
         sleep(2)
         continue
@@ -69,7 +78,9 @@ while True:
     elif btc_data['result']['ask'] >= T1:
         try:
             T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-            print('목표가 =', T1)
+            print('매수기준 =', T1)
+            T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            print('매도기준 =', T2)
             r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001,client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             print(r)
         except Exception as e:
