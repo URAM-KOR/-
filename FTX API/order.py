@@ -16,7 +16,9 @@ c = ccxt.ftx({
 })
 balance = pd.DataFrame(c.fetch_balance())
 balance = float(balance['total']['USD'])
-print('Balance:',balance,'USD')
+position = pd.DataFrame(c.fetch_positions())
+position = position.set_index('future')
+BTC= float(position[position.index == 'BTC-PERP']['size'])
 
 while True:
 
@@ -31,11 +33,17 @@ while True:
     X = 0.5
     T1 = historical.iloc[-1]['open'] + (historical.iloc[-1]['high'] - historical.iloc[-1]['low']) * X
 
-    print(historical.tail)
-
+    print(historical.tail(3))
+    print('잔액 =', balance, 'USD')
+    print('미체결:', BTC)
     print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     print('목표가 =', T1)
 
+    if BTC != 0:
+        if datetime.datetime.now().strftime('%M')==(0 or 15 or 30 or 45):
+            s = c.place_order("BTC-PERP", "sell", 1,  0.0001, reduce_only=True, client_id ="" )
+            print(s)
+            sleep(2)
 
     try:
         btc_data = requests.get('https://ftx.com/api/markets/BTC-PERP').json()
@@ -45,9 +53,6 @@ while True:
     except Exception as e:
         print(f'Error obtaining BTC old data: {e}')
 
-    if datetime.datetime.now().strftime('%M')==0 or 15 or 30 or 45:
-        s = c.place_order("BTC-PERP", "sell", 1,  5 * balance/btc_data['result']['ask'], True)
-        print(s)
 
     if btc_data['result']['ask'] < T1:
         print('The trade requirement was not satisfied.')
@@ -56,7 +61,7 @@ while True:
 
     elif btc_data['result']['ask'] >= T1:
         try:
-            r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 5*balance/btc_data['result']['ask'])
+            r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001)
             print(r)
         except Exception as e:
             print(f'Error making order request: {e}')
