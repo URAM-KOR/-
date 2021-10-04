@@ -7,20 +7,25 @@ import datetime
 import ccxt
 import ftx
 
-#BALANCE
-c = ccxt.ftx({
-    'apiKey': 'VYXBrkmuhutN9cr2APKbblqW4esKX-0Euhe9evr4',
-    'secret': 'QUsJaE8upSSdP9Rve1DRPEeGdcMMEUP-f2iIXiAO',
-    'enableRateLimit': True,
-    #'headers': {'FTX-SUBACCOUNT': 'bot'}, # uncomment line if using subaccount
-})
-balance = pd.DataFrame(c.fetch_balance())
-balance = float(balance['total']['USD'])
-position = pd.DataFrame(c.fetch_positions())
-position = position.set_index('future')
-BTC= float(position[position.index == 'BTC-PERP']['size'])
+
+
 
 while True:
+    # BALANCE
+    c = ccxt.ftx({
+        'apiKey': 'VYXBrkmuhutN9cr2APKbblqW4esKX-0Euhe9evr4',
+        'secret': 'QUsJaE8upSSdP9Rve1DRPEeGdcMMEUP-f2iIXiAO',
+        'enableRateLimit': True,
+        # 'headers': {'FTX-SUBACCOUNT': 'bot'}, # uncomment line if using subaccount
+    })
+
+    balance = pd.DataFrame(c.fetch_balance())
+    balance = float(balance['total']['USD'])
+    position = pd.DataFrame(c.fetch_positions())
+    position = position.set_index('future')
+    BTC = float(position[position.index == 'BTC-PERP']['size'])
+
+    sleep(2)
 
     # STRATEGY
     c = ftx.FtxClient(api_key="VYXBrkmuhutN9cr2APKbblqW4esKX-0Euhe9evr4",
@@ -38,46 +43,33 @@ while True:
     print('미체결:', BTC)
     print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     print('목표가 =', T1)
-
-    if BTC != 0:
-        if datetime.datetime.now().strftime('%M')==(0 or 15 or 30 or 45):
-            s = c.place_order("BTC-PERP", "sell", 1,  0.0001, reduce_only=True, client_id ="" )
-            print(s)
-            sleep(2)
+    # print(float(datetime.datetime.now().strftime('%M'))%15)
 
     try:
         btc_data = requests.get('https://ftx.com/api/markets/BTC-PERP').json()
-        print('현재가 =',btc_data['result']['ask'])
+        print('현재가 =', btc_data['result']['ask'])
         print(balance / btc_data['result']['ask'])
 
     except Exception as e:
         print(f'Error obtaining BTC old data: {e}')
 
+    if BTC != 0:
+        if float(datetime.datetime.now().strftime('%M'))%15==0:
+            s = c.place_order("BTC-PERP", "sell", 1,  0.0001, reduce_only=True, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            print(s)
+            sleep(2)
+    else:
+        if btc_data['result']['ask'] < T1:
+            print('The trade requirement was not satisfied.')
+            sleep(2)
+            continue
 
-    if btc_data['result']['ask'] < T1:
-        print('The trade requirement was not satisfied.')
-        sleep(2)
-        continue
-
-    elif btc_data['result']['ask'] >= T1:
-        try:
-            r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001)
-            print(r)
-        except Exception as e:
-            print(f'Error making order request: {e}')
-
-        sleep(2)
-
-        try:
-            check = c.get_open_orders(r)
-        except Exception as e:
-            print(f'Error checking for order status: {e}')
-
-        if check[0]['status'] == 'open':
-            print('Order placed at {}'.format(pd.Timestamp.now()))
-            break
-        else:
-            print('Order was either filled or canceled at {}'.format(pd.Timestamp.now()))
-            break
+        elif btc_data['result']['ask'] >= T1:
+            try:
+                r = c.place_order("BTC-PERP", "buy", btc_data['result']['ask'], 0.0001,client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                print(r)
+            except Exception as e:
+                print(f'Error making order request: {e}')
+            sleep(2)
 
 
