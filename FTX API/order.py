@@ -63,7 +63,7 @@ while True:
 
         if BTC != 0:
             # if btc_data['result']['ask'] < T2:
-            if float(datetime.datetime.now().strftime('%M'))%15==0 and float(datetime.datetime.now().strftime('%S'))<20==0:
+            if float(datetime.datetime.now().strftime('%M'))%15==0 and float(datetime.datetime.now().strftime('%S'))<20:
                 # T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                 # print('매수기준 =', T1)
                 # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
