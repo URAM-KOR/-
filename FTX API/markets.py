@@ -12,4 +12,6 @@ print(markets)
 # 선물시장 필터링
 futures = markets.loc[markets['name'].str.contains('PERP',case=False)]
 print(futures.sort_values('change24h',ascending=False).head(3))
-
+targetList = futures.sort_values('change24h',ascending=False).head(3)['name']
+for i in targetList:
+    print(i)
