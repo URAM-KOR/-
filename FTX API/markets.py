@@ -39,6 +39,6 @@ print(futures.sort_values('change1h',ascending=False).head(3))
 # targetList = pd.dataFrame(targetList)
 # print('tttttttttttttttt',targetList)
 
-targetList = futures.sort_values('change1h',ascending=False)['name'].head(3)
+targetList = futures.sort_values('changeBod',ascending=False)['name'].head(3)
 for i in targetList:
     print(i)

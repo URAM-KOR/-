@@ -77,9 +77,12 @@ while True:
                 # print('매수기준 =', T1)
                 # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                 # print('매도기준 =', T2)
-                if BTC[0]*recent < 0.2 * balance:
-                    r = c.place_order(f'{coin}', "buy", 1.01*recent, 0.2*balance/recent, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                    print(r)
+                if BTC[0]*recent < 0.5 * balance:
+                    try:
+                        r = c.place_order(f'{coin}', "buy", 1.01*recent, 0.2*balance/recent, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                        print(r)
+                    except Exception as e:
+                        print(f' buying failed{e}')
                 else: print('balance was not satisfied.')
                 sleep(2)
             else:
@@ -94,8 +97,11 @@ while True:
                 # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                 # print('매도기준 =', T2)
                 for w in wallet['future']:
-                    s = c.place_order(f'{w}', "sell", 0.99*recent, wallet[wallet['future']==w]['size'], reduce_only=True,
+                    print('w:',w)
+                    print(float(wallet[wallet['future']==w]['size']))
+                    s = c.place_order(f'{w}', "sell", 0.99*recent, float(wallet[wallet['future']==w]['size']), reduce_only=True,
                                       client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                print(s)
-                sleep(2)
+                    print(s)
+                    sleep(1)
         else: print('The buy requirement was not satisfied.')
+        print('-----------------------------')
