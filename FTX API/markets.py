@@ -40,5 +40,10 @@ print(futures.sort_values('change1h',ascending=False).head(3))
 # print('tttttttttttttttt',targetList)
 
 targetList = futures.sort_values('changeBod',ascending=False)['name'].head(3)
+
+need = pd.Series(['BTC-PERP','ETH-PERP'])
+
+targetList = pd.concat([targetList,need])
+
 for i in targetList:
     print(i)
