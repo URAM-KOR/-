@@ -56,7 +56,7 @@ while True:
         Market :''', coin)
         print(historical.tail(3))
         print('잔액 =', balance, 'USD')
-        print('미체결:', BTC)
+        print('미체결:', BTC[0])
         print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
         # print(float(datetime.datetime.now().strftime('%M'))%15)
@@ -64,11 +64,10 @@ while True:
         T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
 
         try:
-            btc_data = requests.get(f'https://ftx.com/api/markets/{coin}').json()
-            print(f"레버리지 ={BTC/(balance / btc_data['result']['ask']):.2f} 배")
+            print("레버리지 =", BTC[0]/(balance / recent), "배")
             print(f"현재가 = {recent:.8f}")
             T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-            print('매수기준 =', T1, '20ma=',ma_20)
+            print('매수기준 =', T1)
         except Exception as e:
             print(f'Error obtaining {coin} old data: {e}')
         #매수조건
@@ -78,8 +77,8 @@ while True:
                 # print('매수기준 =', T1)
                 # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                 # print('매도기준 =', T2)
-                if BTC*recent < 0.2 * balance:
-                    r = c.place_order(f'{coin}', "buy", 1.01*recent, 0.2*balance/btc_data['result']['ask'],client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                if BTC[0]*recent < 0.2 * balance:
+                    r = c.place_order(f'{coin}', "buy", 1.01*recent, 0.2*balance/recent, client_id =datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     print(r)
                 else: print('balance was not satisfied.')
                 sleep(2)
