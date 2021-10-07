@@ -21,6 +21,7 @@ print(markets)
 
 # 선물시장 필터링
 futures = markets.loc[markets['name'].str.contains('PERP',case=False)]
+futures = futures[futures['volumeUsd24h']>10000000]
 print(futures.sort_values('change1h',ascending=False).head(3))
 
 # targetList=[]
@@ -43,7 +44,7 @@ targetList = futures.sort_values('changeBod',ascending=False)['name'].head(3)
 
 need = pd.Series(['BTC-PERP','ETH-PERP'])
 
-targetList = pd.concat([targetList,need])
+# targetList = pd.concat([targetList,need])
 
 for i in targetList:
     print(i)
