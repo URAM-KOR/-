@@ -27,7 +27,7 @@ while True:
     # 선물시장 필터링
     futures = markets.loc[markets['name'].str.contains('PERP', case=False)]
     futures = futures[futures['volumeUsd24h'] > 10000000]
-    targetList = futures.sort_values('changeBod', ascending=False)['name'].head(3)
+    targetList = futures.sort_values('changeBod', ascending=False)['name'].head(10)
     # need = pd.Series(['BTC-PERP', 'ETH-PERP'])
     # targetList = pd.concat([targetList, need])
 
@@ -66,11 +66,11 @@ while True:
                 'https://ftx.com/api/markets/{}/candles?resolution=15&start_time=1609462800'.format(coin)).json()
             recent = pd.DataFrame(recent['result'])
             recent = recent.loc[:, ['open', 'close', 'high', 'low']].iloc[-1]['open']
-            ma_20 = historical['close'].tail(20).mean()
+            ma_200 = historical['close'].tail(200).mean()
             historical = historical.loc[:, ['open', 'close', 'high', 'low']]
 
 
-            X = 0.5
+            X = 0.4
             print('''-----------------------------------------------
             Market :''', coin)
             print(historical.tail(3))
@@ -80,7 +80,7 @@ while True:
             print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             # print(float(datetime.datetime.now().strftime('%M'))%15)
-            T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
+            T1 = historical.iloc[-1]['open'] + (0.99*historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
             T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
 
 
@@ -88,12 +88,12 @@ while True:
                 print("레버리지 =", BTC[0]/(balance / recent), "배")
                 print(f"현재가 = {recent:.8f}")
                 T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
-                print('매수기준 =', T1,'>',ma_20)
+                print('매수기준 =', T1,'>',ma_200)
                 print('매도기준 =',(historical.iloc[-1]['open'] - 0.2 * (historical.iloc[-2]['high']-historical.iloc[-2]['low'])))
             except Exception as e:
                 print(f'Error obtaining {coin} old data: {e}')
                 # 매수조건
-            if recent >= T1 > ma_20:
+            if recent >= T1 > ma_200:
                 # if (historical.iloc[-1]['open'] - historical.iloc[-2]['open']) < 0:
                 #     if float(datetime.datetime.now().strftime('%S')) > 30 and float(datetime.datetime.now().strftime('%M')) % 15 > 0 :
                         T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
@@ -103,17 +103,15 @@ while True:
                         if BTC[0] * recent < 0.4*balance:
                             try:
                                 if coin == ('BTC-PERP' or 'ETH-PERP'):
-                                    r = c.place_order(f'{coin}', "buy", size =  3 * balance / recent,
-                                                      type='market',
+                                    r = c.place_order(f'{coin}', "buy", 3 * balance / recent,
+                                                      type='market', price = 1.1 * T1,
                                                       client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                                     print(r)
 
                                 print('----------------매수실행-----------------------')
                                 print('매수기준 =', T1, '현재가=', recent)
 
-                                r = c.place_order(f'{coin}', "buy",
-                                                      type='market',
-                                                  size = 0.5 * balance / recent,
+                                r = c.place_order(f'{coin}', "buy", type='market' ,price= 1.1 * T1, size= 0.5 * balance / recent,
                                                   client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                                 print(r)
 
@@ -121,10 +119,10 @@ while True:
                                 print(f' buying failed{e}')
                         else:
                             print('balance was not satisfied.')
-                        sleep(2)
+                        # sleep(1)
             else:
                 print('The buy requirement was not satisfied.')
-            sleep(2)
+            # sleep(1)
 
             #매도조건
 
@@ -148,13 +146,13 @@ while True:
                 w_recent = pd.DataFrame(w_recent['result'])
                 w_recent = w_recent.loc[:, ['open', 'close', 'high', 'low']].iloc[-1]['open']
 
-                if (w_hist.iloc[-1]['open'] - 0.2 * (w_hist.iloc[-2]['high']-w_hist.iloc[-2]['low'])) > w_recent:
+                if w_hist.iloc[-2]['low'] > w_recent:
                     print('----------------매도실행-----------------------')
-                    print('매도기준=',(w_hist.iloc[-1]['open'] - 0.2 * (w_hist.iloc[-2]['high']-w_hist.iloc[-2]['low'])),'현재가=', w_recent)
+                    print('매도기준=', w_hist.iloc[-2]['low'] ,'현재가=', w_recent)
                     print(float(wallet[wallet['future']==w]['size']))
-                    s = c.place_order(f'{w}', "sell", type='market', size = float(wallet[wallet['future'] == w]['size']), reduce_only=True, client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                    s = c.place_order(f'{w}', "sell",type='market' ,price = 0.9*w_recent, size= float(wallet[wallet['future']==w]['size']), reduce_only=True, client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     print(s)
-                    sleep(1)
+                    # sleep(1)
 
             print('-----------------------------------------------')
     except Exception as e:
