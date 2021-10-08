@@ -70,8 +70,8 @@ while True:
             recent = recent.loc[:, ['open', 'close', 'high', 'low']].iloc[-1]['open']
             ma_200 = historical['close'].tail(200).mean()
             historical = historical.loc[:, ['open', 'close', 'high', 'low']]
-            size = (balance/recent) * 2.5 / (
-                        (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * 100 / historical.iloc[-2]['low'])
+            size = (balance/recent) * 2.2 / (
+                        (recent - historical.iloc[-2]['low']) * 100 / historical.iloc[-2]['low'])
 
 
             X = 0.4
@@ -88,7 +88,8 @@ while True:
 
 
             try:
-                print(f'미결제: {BTC[0]*recent:.2f} USD')
+                print(f'미결제 = {BTC[0]*recent:.2f} USD')
+                print(f'Target Size = {size * recent:.2f} USD')
                 print(f"레버리지 ={BTC[0]/(balance / recent):.2f} 배")
                 print(f"현재가 = {recent:.8f}")
                 T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
@@ -104,7 +105,7 @@ while True:
                         # print('매수기준 =', T1)
                         # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                         # print('매도기준 =', T2)
-                        if BTC[0] * recent == 0:
+                        if BTC[0] * recent < size * recent:
                             try:
                                 print('----------------매수실행-----------------------')
                                 print('매수기준 =', T1, '현재가=', recent)
@@ -114,14 +115,14 @@ while True:
                                 #                       client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                                 #     print(r)
                                 # else:
-                                r = c.place_order(f'{coin}', "buy", type='market' ,price= 1.1 * T1, size = size,
+                                r = c.place_order(f'{coin}', "buy", type='market' ,price= 1.1 * T1, size = size - BTC[0] * recent,
                                                   client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                                 print(r)
 
                             except Exception as e:
-                                print(f' buying failed, {e}')
+                                print(f'balance was not satisfied., {e}')
                         else:
-                            print('balance was not satisfied.')
+                            print('size is fulled')
                         # sleep(1)
             else:
                 print('The buy requirement was not satisfied.')
