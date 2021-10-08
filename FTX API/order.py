@@ -26,14 +26,15 @@ while True:
     markets = pd.DataFrame(requests.get('https://ftx.com/api/markets').json()['result'])
     # 선물시장 필터링
     futures = markets.loc[markets['name'].str.contains('PERP', case=False)]
-    futures = futures[futures['volumeUsd24h'] > 10000000]
+    futures = futures[futures['volumeUsd24h'] > 5000000]
     targetList = futures.sort_values('changeBod', ascending=False)['name'].head(10)
-    # need = pd.Series(['BTC-PERP', 'ETH-PERP'])
-    # targetList = pd.concat([targetList, need])
+    need = pd.Series(['BTC-PERP', 'ETH-PERP'])
+    targetList = pd.concat([targetList, need])
 
-    try:
 
-        for i in targetList:
+    for i in targetList:
+        try:
+
             coin = i
 
             # BALANCE
@@ -51,6 +52,7 @@ while True:
             BTC = position[position.index == f"{coin}"]['size'].apply(pd.to_numeric, errors='ignore')
             wallet = pd.DataFrame(c.fetch_account_positions()).apply(pd.to_numeric, errors='ignore')
             wallet = wallet[wallet['size'] > 0]
+
             print(wallet)
 
 
@@ -59,7 +61,7 @@ while True:
             c = ftx.FtxClient(api_key="VYXBrkmuhutN9cr2APKbblqW4esKX-0Euhe9evr4",
                               api_secret="QUsJaE8upSSdP9Rve1DRPEeGdcMMEUP-f2iIXiAO")
             historical = requests.get(
-                'https://ftx.com/api/markets/{}/candles?resolution=900&start_time=1609462800'.format(coin)).json()
+                'https://ftx.com/api/markets/{}/candles?resolution=14400&start_time=1609462800'.format(coin)).json()
             historical = pd.DataFrame(historical['result'])
 
             recent = requests.get(
@@ -68,6 +70,8 @@ while True:
             recent = recent.loc[:, ['open', 'close', 'high', 'low']].iloc[-1]['open']
             ma_200 = historical['close'].tail(200).mean()
             historical = historical.loc[:, ['open', 'close', 'high', 'low']]
+            size = (balance/recent) * 2.5 / (
+                        (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * 100 / historical.iloc[-2]['low'])
 
 
             X = 0.4
@@ -76,7 +80,6 @@ while True:
             print(historical.tail(3))
             print('-----------------------------------------------')
             print('잔액 =', balance, 'USD')
-            print('미결제:', BTC[0])
             print('현재시각 =',datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
             # print(float(datetime.datetime.now().strftime('%M'))%15)
@@ -85,7 +88,8 @@ while True:
 
 
             try:
-                print("레버리지 =", BTC[0]/(balance / recent), "배")
+                print(f'미결제: {BTC[0]*recent:.2f} USD')
+                print(f"레버리지 ={BTC[0]/(balance / recent):.2f} 배")
                 print(f"현재가 = {recent:.8f}")
                 T1 = historical.iloc[-1]['open'] + (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                 print('매수기준 =', T1,'>',ma_200)
@@ -100,23 +104,22 @@ while True:
                         # print('매수기준 =', T1)
                         # T2 = historical.iloc[-1]['open'] - (historical.iloc[-2]['high'] - historical.iloc[-2]['low']) * X
                         # print('매도기준 =', T2)
-                        if BTC[0] * recent < 0.4*balance:
+                        if BTC[0] * recent == 0:
                             try:
-                                if coin == ('BTC-PERP' or 'ETH-PERP'):
-                                    r = c.place_order(f'{coin}', "buy", 3 * balance / recent,
-                                                      type='market', price = 1.1 * T1,
-                                                      client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-                                    print(r)
-
                                 print('----------------매수실행-----------------------')
                                 print('매수기준 =', T1, '현재가=', recent)
-
-                                r = c.place_order(f'{coin}', "buy", type='market' ,price= 1.1 * T1, size= 0.5 * balance / recent,
+                                # if coin == ('BTC-PERP' or 'ETH-PERP'):
+                                #     r = c.place_order(f'{coin}', "buy", size= size,
+                                #                       type='market', price = 1.1 * T1,
+                                #                       client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+                                #     print(r)
+                                # else:
+                                r = c.place_order(f'{coin}', "buy", type='market' ,price= 1.1 * T1, size = size,
                                                   client_id=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                                 print(r)
 
                             except Exception as e:
-                                print(f' buying failed{e}')
+                                print(f' buying failed, {e}')
                         else:
                             print('balance was not satisfied.')
                         # sleep(1)
@@ -136,7 +139,7 @@ while True:
 
             for w in wallet['future']:
                 w_hist = requests.get(
-                    f'https://ftx.com/api/markets/{w}/candles?resolution=900&start_time=1609462800'.format(
+                    f'https://ftx.com/api/markets/{w}/candles?resolution=14400&start_time=1609462800'.format(
                         coin)).json()
                 w_hist = pd.DataFrame(w_hist['result'])
                 w_hist = w_hist.loc[:, ['open', 'close', 'high', 'low']]
@@ -155,5 +158,5 @@ while True:
                     # sleep(1)
 
             print('-----------------------------------------------')
-    except Exception as e:
-        print(f'{e}??')
+        except Exception as e:
+            print(f'{e}??')
