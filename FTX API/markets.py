@@ -22,8 +22,9 @@ print(markets)
 # 선물시장 필터링
 futures = markets.loc[markets['name'].str.contains('PERP',case=False)]
 futures = futures[futures['volumeUsd24h']>10000000]
-print(futures.sort_values('change1h',ascending=False).head(3))
-
+print(futures.sort_values('change24h',ascending=False).tail(10))
+print(futures.sort_values('changeBod',ascending=False).tail(10))
+print(futures.sort_values('change24h',ascending=False).tail(10)[~futures.sort_values('change24h',ascending=False).tail(10)['name'].isin(futures.sort_values('changeBod',ascending=False).tail(10)['name'])])
 # targetList=[]
 # for i in futures['name']:
 #     recent = requests.get(f'https://ftx.com/api/markets/{i}/candles?resolution=15&start_time={Previous_Date}').json()
@@ -40,11 +41,11 @@ print(futures.sort_values('change1h',ascending=False).head(3))
 # targetList = pd.dataFrame(targetList)
 # print('tttttttttttttttt',targetList)
 
-targetList = futures.sort_values('changeBod',ascending=False)['name'].head(3)
+# targetList = futures.sort_values('changeBod',ascending=False)['name'].head(3)
 
-need = pd.Series(['BTC-PERP','ETH-PERP'])
+# need = pd.Series(['BTC-PERP','ETH-PERP'])
 
-# targetList = pd.concat([targetList,need])
+targetList = futures.sort_values('change24h',ascending=False).tail(10)[~futures.sort_values('change24h',ascending=False).tail(10)['name'].isin(futures.sort_values('changeBod',ascending=False).tail(10)['name'])]['name']
 
 for i in targetList:
     print(i)
